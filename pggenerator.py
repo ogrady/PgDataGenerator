@@ -79,6 +79,19 @@ class DateField(Field):
     def generateNonNull(self):
         return "'" + dt.datetime.fromtimestamp(rand.randint(self.earliest, self.latest)).strftime('%Y-%m-%d') + "'"
 
+class SerialField(Field):
+    def __init__(self, startValue = 1, nullChance = 0):
+        super(SerialField, self).__init__(nullChance)
+        self.current = startValue
+
+    def schema(self):
+        return "INTEGER"
+
+    def generateNonNull(self):
+        val = self.current
+        self.current += 1
+        return val
+
 class Relation(object):
     def __init__(self, name, fields):
         self.name = name
