@@ -8,7 +8,7 @@ But values can be restricted to certain ranges to enforce correlations.
 Create your schema directly in source. Eg:
 
 ```python
-import Relation from pggenerator
+from pggenerator import Relation
 
 r = Relation("persons", {
         "name": TextField(minLength = 5, maxLength = 10),
