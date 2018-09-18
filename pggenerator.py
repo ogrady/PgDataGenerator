@@ -102,6 +102,8 @@ class Relation(object):
 # print(IntField(10,100).generate())
 # print(RealField(6,-10,10).generate())
 
+"""
+# usage example:
 r = Relation("persons", {
         "name": TextField(minLength = 5, maxLength = 10),
         "income": IntField(10000, 40000),
@@ -114,3 +116,4 @@ r = Relation("persons", {
 print(r.drop())
 print(r.create())
 print(r.insert(3))
+"""
