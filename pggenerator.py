@@ -4,6 +4,7 @@ import datetime as dt
 
 class Field(object):
     def __init__(self, nullChance = 0):
+        self.generated = []
         self.nullChance = nullChance
 
     def schema(self):
@@ -13,7 +14,9 @@ class Field(object):
         raise "Not implemented"
 
     def generate(self):
-        return "NULL" if rand.random() < self.nullChance else self.generateNonNull()  
+        val = "NULL" if rand.random() < self.nullChance else self.generateNonNull()
+        self.generated.append(val)
+        return val
 
 class IntField(Field):
     def __init__(self, minVal = -2147483648, maxVal = 2147483647, nullChance = 0):
@@ -92,6 +95,24 @@ class SerialField(Field):
         self.current += 1
         return val
 
+class ForeignKeyField(Field):
+    '''
+    keep in mind, when generating tuples for a relation with a ForeignKeyField,
+    at least some tuples for the referenced Field must be created already.
+    Naturally, the values for the ForeignKeyField will only be whatever has been
+    created up to that point in the referenced Field.
+    '''
+    def __init__(self, reference, nullChance = 0):
+        super(ForeignKeyField, self).__init__(nullChance)
+        self.reference = reference
+
+    def schema(self):
+        return self.reference.schema()
+
+    def generateNonNull(self):
+        assert len(self.reference.generated) > 0
+        return rand.choice(self.reference.generated)
+
 class Relation(object):
     def __init__(self, name, fields):
         self.name = name
@@ -115,18 +136,38 @@ class Relation(object):
 # print(IntField(10,100).generate())
 # print(RealField(6,-10,10).generate())
 
-"""
 # usage example:
-r = Relation("persons", {
+"""
+r1 = Relation("persons", {
         "name": TextField(minLength = 5, maxLength = 10),
         "income": IntField(10000, 40000),
         "married": BooleanField(0.3),
         "born": DateField((1970,1,1),(2010,4,10)),
         "x": RealField(6,-1,1),
-        "mostlyNull": TextField(nullChance = 0.95)
+        "mostlyNull": TextField(nullChance = 0.95),
+        "id": SerialField()
     })
 
-print(r.drop())
-print(r.create())
-print(r.insert(3))
+r2 = Relation("orders", {
+        "pid": ForeignKeyField(r1.fields["id"]),
+        "quantity": IntField(1,10),
+        "article": TextField(maxLength = 20)
+    })
+
+r3 = Relation("workers", {
+        "worker": ForeignKeyField(r1.fields["name"]),
+        "boss": ForeignKeyField(r1.fields["name"])
+    })
+
+print(r1.drop())
+print(r1.create())
+print(r1.insert(3))
+
+print(r2.drop())
+print(r2.create())
+print(r2.insert(3))
+
+print(r3.drop())
+print(r3.create())
+print(r3.insert(3))
 """
