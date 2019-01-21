@@ -28,7 +28,7 @@ class IntField(Field):
         self.max = maxVal
 
     def schema(self):
-        return "INTEGER" + " UNIQUE" if self.unique else ""
+        return "INTEGER" + (" UNIQUE" if self.unique else "")
 
     def generateNonNull(self):
         return rand.randint(self.min, self.max)
@@ -41,7 +41,7 @@ class RealField(Field):
         self.max = maxVal
 
     def schema(self):
-        return "REAL" + " UNIQUE" if self.unique else ""
+        return "REAL" + (" UNIQUE" if self.unique else "")
 
     def generateNonNull(self):
         return self.format.format(rand.uniform(self.min, self.max))
@@ -52,7 +52,7 @@ class BooleanField(Field):
         self.chanceForTrue = chanceForTrue
 
     def schema(self):
-        return "BOOLEAN" + " UNIQUE" if self.unique else ""
+        return "BOOLEAN" + (" UNIQUE" if self.unique else "")
 
     def generateNonNull(self):
         return rand.random() <= self.chanceForTrue
@@ -65,7 +65,7 @@ class TextField(Field):
         self.letters = letters
 
     def schema(self):
-        return "TEXT" + " UNIQUE" if self.unique else ""
+        return "TEXT" + (" UNIQUE" if self.unique else "")
 
     def generateNonNull(self):
         return "'%s'" % (''.join([rand.choice(self.letters) for _ in range(rand.randint(self.minLength, self.maxLength))]),)
@@ -80,7 +80,7 @@ class DateField(Field):
         self.latest = time.mktime(latest + (0,0,0,0,0,0))
 
     def schema(self):
-        return "DATE" + " UNIQUE" if self.unique else ""
+        return "DATE" + (" UNIQUE" if self.unique else "")
 
     def generateNonNull(self):
         return "'%s'" % (dt.datetime.fromtimestamp(rand.randint(self.earliest, self.latest)).strftime('%Y-%m-%d'),)
@@ -174,7 +174,7 @@ def main():
 
     print(r1.drop())
     print(r1.create())
-    print(r1.insert(100))
+    print(r1.insert(20))
 
     print(r2.drop())
     print(r2.create())
