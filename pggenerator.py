@@ -135,8 +135,8 @@ class Relation(object):
     def create(self):
         return "CREATE TABLE %s(%s);" % (self.name, ', '.join(["%s %s" % (f.name,f.schema()) for f in self.fields]))
 
-    def drop(self):
-        return "DROP TABLE %s;" % (self.name)
+    def drop(self, cascade = False):
+        return "DROP TABLE %s %s;" % (self.name, ("CASCADE" if cascade else ""))
 
     def insert(self, n):
         tuples = []
@@ -145,11 +145,11 @@ class Relation(object):
         return "INSERT INTO %s (VALUES \n %s\n);" % (self.name, ',\n '.join("(%s)" % (t,) for t in tuples))
 
 def main():
-    print(DateField("some_data", (1990,12,1), (2007,1,1)).generate())
-    print(TextField("some_text", 20).generate())
-    print(BooleanField("some_bool", 0.5).generate())
-    print(IntField("some_int", 10,100).generate())
-    print(RealField("some_real", 6,-10,10).generate())
+    # print(DateField("some_data", (1990,12,1), (2007,1,1)).generate())
+    # print(TextField("some_text", 20).generate())
+    # print(BooleanField("some_bool", 0.5).generate())
+    # print(IntField("some_int", 10,100).generate())
+    # print(RealField("some_real", 6,-10,10).generate())
 
     r1 = Relation("persons", [
             TextField("name", minLength = 5, maxLength = 10, unique = True),
@@ -172,15 +172,15 @@ def main():
             ForeignKeyField("boss", r1.field("name"))
         ])
 
-    print(r1.drop())
+    print(r1.drop(True))
     print(r1.create())
     print(r1.insert(20))
 
-    print(r2.drop())
+    print(r2.drop(True))
     print(r2.create())
     print(r2.insert(1000))
 
-    print(r3.drop())
+    print(r3.drop(True))
     print(r3.create())
     print(r3.insert(50))
 
