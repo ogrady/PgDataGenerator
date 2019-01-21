@@ -3,11 +3,12 @@ import time
 import datetime as dt
 
 class Field(object):
-    def __init__(self, name, nullChance = 0):
+    def __init__(self, name, nullChance = 0, unique = False):
         self.name = name
         self.generated = []
         self.nullChance = nullChance
         self.relation = None
+        self.unique = unique
 
     def schema(self):
         raise "Not implemented"
@@ -21,76 +22,76 @@ class Field(object):
         return val
 
 class IntField(Field):
-    def __init__(self, name, minVal = -2147483648, maxVal = 2147483647, nullChance = 0):
-        super(IntField, self).__init__(name, nullChance)
+    def __init__(self, name, minVal = -2147483648, maxVal = 2147483647, nullChance = 0, unique = False):
+        super(IntField, self).__init__(name, nullChance, unique)
         self.min = minVal
         self.max = maxVal
 
     def schema(self):
-        return "INTEGER"
+        return "INTEGER" + " UNIQUE" if self.unique else ""
 
     def generateNonNull(self):
         return rand.randint(self.min, self.max)
 
 class RealField(Field):
-    def __init__(self, name, precision = 6, minVal = -2147483648.0, maxVal = 2147483647.0, nullChance = 0):
-        super(RealField, self).__init__(name, nullChance)
+    def __init__(self, name, precision = 6, minVal = -2147483648.0, maxVal = 2147483647.0, nullChance = 0, unique = False):
+        super(RealField, self).__init__(name, nullChance, unique)
         self.format = "{:.%sf}" % (precision,)
         self.min = minVal
         self.max = maxVal
 
     def schema(self):
-        return "REAL"
+        return "REAL" + " UNIQUE" if self.unique else ""
 
     def generateNonNull(self):
         return self.format.format(rand.uniform(self.min, self.max))
 
 class BooleanField(Field):
-    def __init__(self, name, chanceForTrue = 0.5, nullChance = 0):
-        super(BooleanField, self).__init__(name, nullChance)        
+    def __init__(self, name, chanceForTrue = 0.5, nullChance = 0, unique = False):
+        super(BooleanField, self).__init__(name, nullChance, unique)        
         self.chanceForTrue = chanceForTrue
 
     def schema(self):
-        return "BOOLEAN"
+        return "BOOLEAN" + " UNIQUE" if self.unique else ""
 
     def generateNonNull(self):
         return rand.random() <= self.chanceForTrue
 
 class TextField(Field):
-    def __init__(self, name, minLength = 0, maxLength = 255, letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890", nullChance = 0):
-        super(TextField, self).__init__(name, nullChance)
+    def __init__(self, name, minLength = 0, maxLength = 255, letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890", nullChance = 0, unique = False):
+        super(TextField, self).__init__(name, nullChance, unique)
         self.minLength = minLength
         self.maxLength = maxLength
         self.letters = letters
 
     def schema(self):
-        return "TEXT"
+        return "TEXT" + " UNIQUE" if self.unique else ""
 
     def generateNonNull(self):
         return "'%s'" % (''.join([rand.choice(self.letters) for _ in range(rand.randint(self.minLength, self.maxLength))]),)
 
 class DateField(Field):
-    def __init__(self, name, earliest, latest, nullChance = 0):
+    def __init__(self, name, earliest, latest, nullChance = 0, unique = False):
         '''
         Both dates are expected to be a triple (year, month, day)
         '''
-        super(DateField, self).__init__(name, nullChance)
+        super(DateField, self).__init__(name, nullChance, unique)
         self.earliest = time.mktime(earliest + (0,0,0,0,0,0)) # append hour, minute, second, ...
         self.latest = time.mktime(latest + (0,0,0,0,0,0))
 
     def schema(self):
-        return "DATE"
+        return "DATE" + " UNIQUE" if self.unique else ""
 
     def generateNonNull(self):
         return "'%s'" % (dt.datetime.fromtimestamp(rand.randint(self.earliest, self.latest)).strftime('%Y-%m-%d'),)
 
 class SerialField(Field):
     def __init__(self, name, startValue = 1, nullChance = 0):
-        super(SerialField, self).__init__(name, nullChance)
+        super(SerialField, self).__init__(name, nullChance, True)
         self.current = startValue
 
     def schema(self):
-        return "INTEGER"
+        return "SERIAL"
 
     def generateNonNull(self):
         val = self.current
@@ -105,12 +106,14 @@ class ForeignKeyField(Field):
     created up to that point in the referenced Field.
     The type of the field will obviously be the same as the referenced field.
     '''
-    def __init__(self, name, reference, nullChance = 0):
-        super(ForeignKeyField, self).__init__(name, nullChance)
+    def __init__(self, name, reference, nullChance = 0, unique = False):
+        super(ForeignKeyField, self).__init__(name, nullChance, unique)
+        if not reference.unique:
+            raise Exception("Can not reference non-UNIQUE field '%s'" % (str(reference.name,)))
         self.reference = reference
 
     def schema(self):
-        return "%s REFERENCES %s.(%s)" % (self.reference.schema(), self.reference.relation.name, self.reference.name)
+        return "%s REFERENCES %s(%s)" % (self.reference.schema(), self.reference.relation.name, self.reference.name)
 
     def generateNonNull(self):
         assert len(self.reference.generated) > 0
@@ -149,7 +152,7 @@ def main():
     print(RealField("some_real", 6,-10,10).generate())
 
     r1 = Relation("persons", [
-            TextField("name", minLength = 5, maxLength = 10),
+            TextField("name", minLength = 5, maxLength = 10, unique = True),
             IntField("income", 10000, 40000),
             BooleanField("married", 0.3),
             DateField("born", (1970,1,1),(2010,4,10)),
@@ -171,15 +174,15 @@ def main():
 
     print(r1.drop())
     print(r1.create())
-    print(r1.insert(3))
+    print(r1.insert(100))
 
     print(r2.drop())
     print(r2.create())
-    print(r2.insert(3))
+    print(r2.insert(1000))
 
     print(r3.drop())
     print(r3.create())
-    print(r3.insert(30))
+    print(r3.insert(50))
 
 if __name__ == '__main__':
     main()

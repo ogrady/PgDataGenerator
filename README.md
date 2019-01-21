@@ -78,6 +78,10 @@ This data generator only supports a limited number of built-in types.
 Most of these do the obvious. Parameters are explained in the following section.
 Each field takes a name as first parameter and an optional names parameter `nullChance` (which is 0 per default) which
 expects a number between 0 and 1 to determine whether a value in this field is `NULL`.
+All data types also take a parameter `unique`, which is **just a flag** that will append the string `UNIQUE` to the field.
+It is required to make a field that is target of a `ForeignKey` unique to comply with Postgres.
+**This does not guarantee actual uniqueness within the data!** If you use this flag, manual post processing may be required.
+`Serial` is the only data type that (coincidentally) provides real uniqueness.
 Most parameters in the following sections have appropriate default values to reflect behaviour as could be expected in PostgreSQL
 (eg integers ranging from -2147483648 to 2147483647) as mentioned in [the docs](https://www.postgresql.org/docs/10/static/datatype-numeric.html)).
 
